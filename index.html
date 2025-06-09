@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>틀린그림찾기 - 어르신 인지 훈련</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            min-height: 100vh;
+            padding: 20px;
+            color: #2e7d32;
+        }
+
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #1b5e20;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #4caf50;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .level-select {
+            padding: 15px 25px;
+            font-size: 18px;
+            border: 3px solid #4caf50;
+            border-radius: 15px;
+            background: white;
+            color: #2e7d32;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .level-select:hover {
+            background: #4caf50;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .level-select.active {
+            background: #2e7d32;
+            color: white;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: #f1f8e9;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #4caf50;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .info-label {
+            font-size: 16px;
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1b5e20;
+        }
+
+        .game-area {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .image-container {
+            position: relative;
+            border: 4px solid #4caf50;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #f9f9f9;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .game-image {
+            width: 400px;
+            height: 400px;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .image-label {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2e7d32;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .difference-marker {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ff4444;
+            border-radius: 50%;
+            background: rgba(255, 68, 68, 0.2);
+            pointer-events: none;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #4caf50;
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .hint-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .hint-button:hover {
+            background: #f57c00;
+            transform: translateY(-2px);
+        }
+
+        .hint-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .congratulations {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #4caf50, #8bc34a);
+            color: white;
+            border-radius: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .congratulations h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .next-level-btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: white;
+            color: #2e7d32;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .next-level-btn:hover {
+            background: #f1f8e9;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .game-image {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .game-area {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1 class="title">🔍 틀린그림찾기</h1>
+            <p class="subtitle">두 그림을 비교하여 다른 부분을 찾아보세요!</p>
+        </div>
+
+        <div class="controls">
+            <button class="level-select active" data-level="1">쉬움 (3개)</button>
+            <button class="level-select" data-level="2">보통 (5개)</button>
+            <button class="level-select" data-level="3">어려움 (7개)</button>
+        </div>
+
+        <div class="game-info">
+            <div class="info-box">
+                <div class="info-label">찾은 개수</div>
+                <div class="info-value" id="found">0</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">전체 개수</div>
+                <div class="info-value" id="total">3</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">점수</div>
+                <div class="info-value" id="score">0</div>
+            </div>
+            <div class="info-box">
+                <button class="hint-button" id="hintBtn">💡 힌트</button>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="game-area">
+            <div class="image-container">
+                <div class="image-label">원본 그림</div>
+                <canvas class="game-image" id="originalImage"></canvas>
+            </div>
+            <div class="image-container">
+                <div class="image-label">다른 그림</div>
+                <canvas class="game-image" id="modifiedImage"></canvas>
+            </div>
+        </div>
+
+        <div class="congratulations" id="congratulations">
+            <h2>🎉 축하합니다!</h2>
+            <p>모든 틀린 부분을 찾으셨습니다!</p>
+            <button class="next-level-btn" onclick="nextLevel()">다음 단계</button>
+            <button class="next-level-btn" onclick="restartGame()">다시 시작</button>
+        </div>
+    </div>
+
+    <div class="success-message" id="successMessage">
+        <div>🎯 잘 찾으셨습니다!</div>
+        <div style="font-size: 18px; margin-top: 10px;">+100점</div>
+    </div>
+
+    <script>
+        class SpotDifferenceGame {
+            constructor() {
+                this.currentLevel = 1;
+                this.foundDifferences = 0;
+                this.totalDifferences = 3;
+                this.score = 0;
+                this.differences = [];
+                this.foundPositions = [];
+                this.hintUsed = false;
+                
+                this.originalCanvas = document.getElementById('originalImage');
+                this.modifiedCanvas = document.getElementById('modifiedImage');
+                this.originalCtx = this.originalCanvas.getContext('2d');
+                this.modifiedCtx = this.modifiedCanvas.getContext('2d');
+                
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.generateGame();
+            }
+
+            setupCanvas() {
+                this.originalCanvas.width = 400;
+                this.originalCanvas.height = 400;
+                this.modifiedCanvas.width = 400;
+                this.modifiedCanvas.height = 400;
+            }
+
+            setupEventListeners() {
+                // 레벨 선택
+                document.querySelectorAll('.level-select').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.selectLevel(parseInt(e.target.dataset.level));
+                    });
+                });
+
+                // 힌트 버튼
+                document.getElementById('hintBtn').addEventListener('click', () => {
+                    this.showHint();
+                });
+
+                // 캔버스 클릭
+                this.modifiedCanvas.addEventListener('click', (e) => {
+                    this.handleClick(e);
+                });
+            }
+
+            selectLevel(level) {
+                this.currentLevel = level;
+                this.totalDifferences = level === 1 ? 3 : level === 2 ? 5 : 7;
+                
+                // UI 업데이트
+                document.querySelectorAll('.level-select').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-level="${level}"]`).classList.add('active');
+                
+                this.restartGame();
+            }
+
+            generateGame() {
+                this.foundDifferences = 0;
+                this.foundPositions = [];
+                this.differences = [];
+                this.hintUsed = false;
+                
+                // 배경 그리기
+                this.drawBackground();
+                
+                // 공통 요소들 그리기
+                this.drawCommonElements();
+                
+                // 차이점 생성
+                this.generateDifferences();
+                
+                this.updateUI();
+                document.getElementById('congratulations').style.display = 'none';
+                document.getElementById('hintBtn').disabled = false;
+            }
+
+            drawBackground() {
+                // 하늘색 배경
+                const gradient = this.originalCtx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, '#87CEEB');
+                gradient.addColorStop(1, '#E0F6FF');
+                
+                this.originalCtx.fillStyle = gradient;
+                this.originalCtx.fillRect(0, 0, 400, 400);
+                
+                this.modifiedCtx.fillStyle = gradient;
+                this.modifiedCtx.fillRect(0, 0, 400, 400);
+                
+                // 잔디
+                this.originalCtx.fillStyle = '#90EE90';
+                this.originalCtx.fillRect(0, 300, 400, 100);
+                
+                this.modifiedCtx.fillStyle = '#90EE90';
+                this.modifiedCtx.fillRect(0, 300, 400, 100);
+            }
+
+            drawCommonElements() {
+                // 집
+                this.drawHouse(this.originalCtx, 100, 200);
+                this.drawHouse(this.modifiedCtx, 100, 200);
+                
+                // 나무
+                this.drawTree(this.originalCtx, 300, 150);
+                this.drawTree(this.modifiedCtx, 300, 150);
+                
+                // 태양
+                this.drawSun(this.originalCtx, 50, 50);
+                this.drawSun(this.modifiedCtx, 50, 50);
+                
+                // 구름
+                this.drawCloud(this.originalCtx, 200, 80);
+                this.drawCloud(this.modifiedCtx, 200, 80);
+                
+                // 꽃들
+                this.drawFlower(this.originalCtx, 50, 350, '#FF69B4');
+                this.drawFlower(this.modifiedCtx, 50, 350, '#FF69B4');
+                
+                this.drawFlower(this.originalCtx, 150, 360, '#FF4500');
+                this.drawFlower(this.modifiedCtx, 150, 360, '#FF4500');
+            }
+
+            drawHouse(ctx, x, y) {
+                // 집 벽
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(x, y, 80, 80);
+                
+                // 지붕
+                ctx.fillStyle = '#DC143C';
+                ctx.beginPath();
+                ctx.moveTo(x - 10, y);
+                ctx.lineTo(x + 90, y);
+                ctx.lineTo(x + 40, y - 40);
+                ctx.closePath();
+                ctx.fill();
+                
+                // 문
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(x + 30, y + 40, 20, 40);
+                
+                // 창문
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(x + 10, y + 20, 15, 15);
+                ctx.fillRect(x + 55, y + 20, 15, 15);
+            }
+
+            drawTree(ctx, x, y) {
+                // 나무 줄기
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(x - 10, y + 50, 20, 50);
+                
+                // 나무 잎
+                ctx.fillStyle = '#228B22';
+                ctx.beginPath();
+                ctx.arc(x, y, 40, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            drawSun(ctx, x, y) {
+                // 태양
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 태양 광선
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 3;
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i * Math.PI) / 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x + Math.cos(angle) * 30, y + Math.sin(angle) * 30);
+                    ctx.lineTo(x + Math.cos(angle) * 40, y + Math.sin(angle) * 40);
+                    ctx.stroke();
+                }
+            }
+
+            drawCloud(ctx, x, y) {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.arc(x + 20, y, 25, 0, Math.PI * 2);
+                ctx.arc(x + 40, y, 20, 0, Math.PI * 2);
+                ctx.arc(x + 20, y - 15, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            drawFlower(ctx, x, y, color) {
+                // 꽃잎
+                ctx.fillStyle = color;
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * Math.PI * 2) / 5;
+                    ctx.beginPath();
+                    ctx.arc(x + Math.cos(angle) * 8, y + Math.sin(angle) * 8, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // 꽃 중심
+                ctx.fillStyle = '#FFFF00';
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            generateDifferences() {
+                const possibleDifferences = [
+                    { x: 120, y: 220, draw: (ctx) => {
+                        // 집 창문 색깔 변경
+                        ctx.fillStyle = '#FF69B4';
+                        ctx.fillRect(110, 220, 15, 15);
+                    }},
+                    { x: 165, y: 220, draw: (ctx) => {
+                        // 집 오른쪽 창문 색깔 변경
+                        ctx.fillStyle = '#00FF00';
+                        ctx.fillRect(155, 220, 15, 15);
+                    }},
+                    { x: 50, y: 50, draw: (ctx) => {
+                        // 태양 색깔 변경
+                        ctx.fillStyle = '#FF4500';
+                        ctx.beginPath();
+                        ctx.arc(50, 50, 25, 0, Math.PI * 2);
+                        ctx.fill();
+                    }},
+                    { x: 300, y: 150, draw: (ctx) => {
+                        // 나무 잎 색깔 변경
+                        ctx.fillStyle = '#FF1493';
+                        ctx.beginPath();
+                        ctx.arc(300, 150, 40, 0, Math.PI * 2);
+                        ctx.fill();
+                    }},
+                    { x: 50, y: 350, draw: (ctx) => {
+                        // 꽃 색깔 변경
+                        this.drawFlower(ctx, 50, 350, '#00FFFF');
+                    }},
+                    { x: 150, y: 360, draw: (ctx) => {
+                        // 꽃 색깔 변경
+                        this.drawFlower(ctx, 150, 360, '#9400D3');
+                    }},
+                    { x: 200, y: 80, draw: (ctx) => {
+                        // 구름 색깔 변경
+                        ctx.fillStyle = '#FFB6C1';
+                        ctx.beginPath();
+                        ctx.arc(200, 80, 20, 0, Math.PI * 2);
+                        ctx.arc(220, 80, 25, 0, Math.PI * 2);
+                        ctx.arc(240, 80, 20, 0, Math.PI * 2);
+                        ctx.arc(220, 65, 20, 0, Math.PI * 2);
+                        ctx.fill();
+                    }},
+                    { x: 250, y: 350, draw: (ctx) => {
+                        // 추가 꽃
+                        this.drawFlower(ctx, 250, 350, '#FF1493');
+                    }},
+                    { x: 350, y: 320, draw: (ctx) => {
+                        // 추가 작은 나무
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(345, 320, 10, 30);
+                        ctx.fillStyle = '#32CD32';
+                        ctx.beginPath();
+                        ctx.arc(350, 320, 20, 0, Math.PI * 2);
+                        ctx.fill();
+                    }}
+                ];
+
+                // 난이도에 따라 차이점 선택
+                const shuffled = possibleDifferences.sort(() => Math.random() - 0.5);
+                this.differences = shuffled.slice(0, this.totalDifferences);
+
+                // 차이점 그리기
+                this.differences.forEach(diff => {
+                    diff.draw(this.modifiedCtx);
+                });
+            }
+
+            handleClick(event) {
+                const rect = this.modifiedCanvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                // 스케일 조정
+                const scaleX = this.modifiedCanvas.width / rect.width;
+                const scaleY = this.modifiedCanvas.height / rect.height;
+                const actualX = x * scaleX;
+                const actualY = y * scaleY;
+
+                // 차이점 확인
+                for (let i = 0; i < this.differences.length; i++) {
+                    const diff = this.differences[i];
+                    const distance = Math.sqrt(Math.pow(actualX - diff.x, 2) + Math.pow(actualY - diff.y, 2));
+                    
+                    if (distance < 30 && !this.foundPositions.includes(i)) {
+                        this.foundPositions.push(i);
+                        this.foundDifferences++;
+                        this.score += 100;
+                        
+                        this.markDifference(diff.x, diff.y);
+                        this.showSuccessMessage();
+                        this.playSuccessSound();
+                        
+                        this.updateUI();
+                        
+                        if (this.foundDifferences === this.totalDifferences) {
+                            setTimeout(() => this.showCongratulations(), 1000);
+                        }
+                        
+                        return;
+                    }
+                }
+            }
+
+            markDifference(x, y) {
+                const rect = this.modifiedCanvas.getBoundingClientRect();
+                const scaleX = rect.width / this.modifiedCanvas.width;
+                const scaleY = rect.height / this.modifiedCanvas.height;
+                
+                // 캔버스 좌표를 실제 화면 좌표로 변환
+                const screenX = x * scaleX;
+                const screenY = y * scaleY;
+                
+                const marker = document.createElement('div');
+                marker.className = 'difference-marker';
+                marker.style.left = (screenX - 20) + 'px';
+                marker.style.top = (screenY - 20) + 'px';
+                
+                this.modifiedCanvas.parentElement.appendChild(marker);
+            }
+
+            showSuccessMessage() {
+                const message = document.getElementById('successMessage');
+                message.style.display = 'block';
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 2000);
+            }
+
+            showHint() {
+                if (this.hintUsed || this.foundDifferences === this.totalDifferences) return;
+                
+                // 아직 찾지 못한 차이점 중 하나 표시
+                const unfound = this.differences.filter((_, i) => !this.foundPositions.includes(i));
+                if (unfound.length > 0) {
+                    const hint = unfound[0];
+                    const rect = this.modifiedCanvas.getBoundingClientRect();
+                    const scaleX = rect.width / this.modifiedCanvas.width;
+                    const scaleY = rect.height / this.modifiedCanvas.height;
+                    
+                    // 캔버스 좌표를 실제 화면 좌표로 변환
+                    const screenX = hint.x * scaleX;
+                    const screenY = hint.y * scaleY;
+                    
+                    const hintMarker = document.createElement('div');
+                    hintMarker.style.position = 'absolute';
+                    hintMarker.style.left = (screenX - 25) + 'px';
+                    hintMarker.style.top = (screenY - 25) + 'px';
+                    hintMarker.style.width = '50px';
+                    hintMarker.style.height = '50px';
+                    hintMarker.style.border = '3px dashed #ff9800';
+                    hintMarker.style.borderRadius = '50%';
+                    hintMarker.style.animation = 'pulse 1s infinite';
+                    hintMarker.style.pointerEvents = 'none';
+                    
+                    this.modifiedCanvas.parentElement.appendChild(hintMarker);
+                    
+                    setTimeout(() => {
+                        hintMarker.remove();
+                    }, 3000);
+                    
+                    this.hintUsed = true;
+                    document.getElementById('hintBtn').disabled = true;
+                }
+            }
+
+            showCongratulations() {
+                document.getElementById('congratulations').style.display = 'block';
+                this.playCompletionSound();
+            }
+
+            playSuccessSound() {
+                // 간단한 성공 효과음 시뮬레이션
+                const audio = new AudioContext();
+                const oscillator = audio.createOscillator();
+                const gainNode = audio.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audio.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audio.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + 0.5);
+                
+                oscillator.start(audio.currentTime);
+                oscillator.stop(audio.currentTime + 0.5);
+            }
+
+            playCompletionSound() {
+                // 완료 효과음
+                const audio = new AudioContext();
+                const frequencies = [523, 659, 784, 1047];
+                
+                frequencies.forEach((freq, i) => {
+                    setTimeout(() => {
+                        const oscillator = audio.createOscillator();
+                        const gainNode = audio.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audio.destination);
+                        
+                        oscillator.frequency.value = freq;
+                        oscillator.type = 'sine';
+                        
+                        gainNode.gain.setValueAtTime(0.2, audio.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + 0.3);
+                        
+                        oscillator.start(audio.currentTime);
+                        oscillator.stop(audio.currentTime + 0.3);
+                    }, i * 150);
+                });
+            }
+
+            updateUI() {
+                document.getElementById('found').textContent = this.foundDifferences;
+                document.getElementById('total').textContent = this.totalDifferences;
+                document.getElementById('score').textContent = this.score;
+                
+                const progress = (this.foundDifferences / this.totalDifferences) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+            }
+
+            restartGame() {
+                // 기존 마커들 제거
+                document.querySelectorAll('.difference-marker').forEach(marker => {
+                    marker.remove();
+                });
+                
+                // 힌트 마커들도 제거
+                this.modifiedCanvas.parentElement.querySelectorAll('div[style*="dashed"]').forEach(marker => {
+                    marker.remove();
+                });
+                
+                this.generateGame();
+            }
+
+            nextLevel() {
+                if (this.currentLevel < 3) {
+                    this.selectLevel(this.currentLevel + 1);
+                } else {
+                    this.restartGame();
+                }
+            }
+        }
+
+        // 전역 함수들
+        function restartGame() {
+            game.restartGame();
+        }
+
+        function nextLevel() {
+            game.nextLevel();
+        }
+
+        // 게임 시작
+        const game = new SpotDifferenceGame();
+    </script>
+</body>
+</html>
